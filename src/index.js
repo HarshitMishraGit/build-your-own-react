@@ -8,7 +8,7 @@ function createElement(type, props, ...children) {
       }),
     },
   };
-  console.log(r);
+  // console.log(r);
   return r;
 }
 
@@ -35,13 +35,23 @@ function render(element, container) {
 
 function workLoop(deadline) {
   let shouldYield = false;
-  console.log("working on next unit of work", nextUnitOfWork);
+  console.log(
+    "working on next unit of work",
+    nextUnitOfWork,
+    "deadline",
+    deadline
+  );
+
   while (nextUnitOfWork && !shouldYield) {
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
     shouldYield = deadline.timeRemaining() < 1;
   }
 
-  if (nextUnitOfWork ) {
+  if (nextUnitOfWork) {
+    /*
+      requestIdleCallback() runs the function during the browser idle periods to 
+      avoid impacting animations and input responses etc
+    */
     requestIdleCallback(workLoop);
   } else {
     console.log("no more work to do");
