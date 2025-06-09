@@ -22,23 +22,94 @@ function createTextElement(text) {
   };
 }
 
-function render(element, container) {
-  const domElement =
-    element.type === "TEXT_ELEMENT"
-      ? document.createTextNode("")
-      : document.createElement(element.type);
+let nextUnitOfWork = null;
 
-  Object.keys(element.props).forEach((name) => {
-    if (name !== "children") {
-      domElement[name] = element.props[name]; // assing all the props to the element
+function render(element, container) {
+  nextUnitOfWork = {
+    dom: container,
+    props: {
+      children: [element],
+    },
+  };
+}
+
+function workLoop(deadline) {
+  let shouldYield = false;
+  console.log("working on next unit of work", nextUnitOfWork);
+  while (nextUnitOfWork && !shouldYield) {
+    nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
+    shouldYield = deadline.timeRemaining() < 1;
+  }
+
+  if (nextUnitOfWork) {
+    requestIdleCallback(workLoop);
+  } else {
+    console.log("no more work to do");
+  }
+}
+
+requestIdleCallback(workLoop);
+
+function performUnitOfWork(fiber) {
+  console.log("fiber", fiber);
+  if (!fiber.dom) {
+    fiber.dom = createDom(fiber);
+  }
+
+  if (fiber.parent) {
+    fiber.parent.dom.appendChild(fiber.dom);
+  }
+
+  const elements = fiber.props.children;
+  let index = 0;
+  let prevSibling = null;
+
+  while (index < elements.length) {
+    const element = elements[index];
+
+    const newFiber = {
+      type: element.type,
+      props: element.props,
+      parent: fiber,
+      dom: null,
+    };
+
+    if (index === 0) {
+      fiber.child = newFiber;
+    } else {
+      prevSibling.nextSibling = newFiber;
+    }
+    prevSibling = newFiber;
+    index++;
+  }
+
+  if (fiber.child) {
+    return fiber.child;
+  }
+
+  let nextFiber = fiber;
+  while (nextFiber) {
+    if (nextFiber.sibling) {
+      return nextFiber.sibling;
+    }
+    nextFiber = nextFiber.parent;
+  }
+  return null;
+}
+
+function createDom(fiber) {
+  const domElement =
+    fiber.type === "TEXT_ELEMENT"
+      ? document.createTextNode("")
+      : document.createElement(fiber.type);
+
+  Object.keys(fiber.props).forEach((prop) => {
+    if (prop !== "children") {
+      domElement[prop] = fiber.props[prop];
     }
   });
 
-  element.props.children.forEach((child) => {
-    render(child, domElement);
-  });
-
-  container.append(domElement);
+  return domElement;
 }
 
 const CustomReact = {
