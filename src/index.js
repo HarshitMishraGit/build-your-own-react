@@ -41,7 +41,7 @@ function workLoop(deadline) {
     shouldYield = deadline.timeRemaining() < 1;
   }
 
-  if (nextUnitOfWork) {
+  if (nextUnitOfWork ) {
     requestIdleCallback(workLoop);
   } else {
     console.log("no more work to do");
@@ -52,6 +52,7 @@ requestIdleCallback(workLoop);
 
 function performUnitOfWork(fiber) {
   console.log("fiber", fiber);
+
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
   }
@@ -89,8 +90,8 @@ function performUnitOfWork(fiber) {
 
   let nextFiber = fiber;
   while (nextFiber) {
-    if (nextFiber.sibling) {
-      return nextFiber.sibling;
+    if (nextFiber.nextSibling) {
+      return nextFiber.nextSibling;
     }
     nextFiber = nextFiber.parent;
   }
@@ -121,8 +122,12 @@ const CustomReact = {
 /** @jsx CustomReact.createElement */
 const element = (
   <div id="foo">
-    <a>bar</a>
-    <b />
+    <div id="child1">
+      <div id="child1-1">child1-1</div>
+      <a href="https://www.google.com">child1-2</a>
+    </div>
+    <div id="child2">child2</div>
+    <div id="child3">child3</div>
   </div>
 );
 
